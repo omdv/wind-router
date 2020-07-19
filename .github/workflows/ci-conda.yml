@@ -20,3 +20,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
           environment-file: conda.yml
           activate-environment: windrouter
+      - name: Run tests
+        shell: pwsh
+        run: make test

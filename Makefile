@@ -15,3 +15,8 @@ install:
 .PHONE: test
 test:
 	python -m unittest discover -v
+
+.PHONE: commit
+commit:
+	conda update -y --all
+	conda env export --no-builds > conda.yml
