@@ -10,5 +10,6 @@ DEBUG = True
 # https://randomkeygen.com/
 SECRET_KEY = 'my precious'
 
-# Default map coordinates - lat1, lat2, lon1, lon2
-DEFAULT_MAP = [30, 45, 0, 40]
+# Default map coordinates - lat1, lon1, lat2, lon2
+DEFAULT_MAP = [30, 0, 45, 40]
+DEFAULT_ROUTE = [43.70313, 7.26608, 33.888630, 35.495480]

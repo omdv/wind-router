@@ -3,6 +3,11 @@ import pygrib as pg
 from scipy.interpolate import RegularGridInterpolator
 
 
+def mps_to_knots(vals):
+    """Meters per second to knots."""
+    return vals * 3600 / 1852.0
+
+
 def grib_to_wind_function(filepath):
     """Vectorized wind functions from grib file."""
     grbs = pg.open(filepath)

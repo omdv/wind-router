@@ -27,7 +27,7 @@ def plot_png():
         lat2 = request.args['lat2']
         lon2 = request.args['lon2']
     except (KeyError) as e:
-        lat1, lat2, lon1, lon2 = app.config['DEFAULT_MAP']
+        lat1, lon1, lat2, lon2 = app.config['DEFAULT_MAP']
         logging.log(logging.WARNING, 'using default coordinates')
 
     try:
@@ -42,7 +42,10 @@ def plot_png():
     fig = create_map(lat1, lon1, lat2, lon2)
     filepath = 'data/2019122212/2019122212f000'
     fig = add_barbs(fig, filepath, lat1, lon1, lat2, lon2)
-    fig = add_route(fig, 43.2, 6, 32.4, 36)
+
+    # get route coordinates
+    r_la1, r_lo1, r_la2, r_lo2 = app.config['DEFAULT_ROUTE']
+    fig = add_route(fig, r_la1, r_lo1, r_la2, r_lo2)
 
     output = io.BytesIO()
     FigureCanvas(fig).print_png(output)

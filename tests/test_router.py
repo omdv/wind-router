@@ -5,7 +5,7 @@ from windrouter import router
 
 class TestRouterMethods(unittest.TestCase):
 
-    def test_gcr(self):
+    def test_gcr_function(self):
         # Default map coordinates - lat1, lat2, lon1, lon2
         lat1 = 43.2
         lat2 = 36
