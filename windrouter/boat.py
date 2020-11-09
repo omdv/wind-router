@@ -1,5 +1,6 @@
 """Boat vectors"""
 import numpy as np
+
 from scipy.interpolate import interp2d
 
 
@@ -24,7 +25,7 @@ def func_boat_speed(x, boat):
     twa = x[1]
     twa = np.abs(twa)
     if twa > 180:
-        twa = 360.-twa
+        twa = 360. - twa
     return boat['func'](tws, twa)
 
 
@@ -35,7 +36,7 @@ def get_boat_speed(boat, tws, twa):
 
     # get rid of negative and above 180
     twa = np.abs(twa)
-    twa[twa > 180] = 360.-twa[twa > 180]
+    twa[twa > 180] = 360. - twa[twa > 180]
 
     # init boat speed vector
     boat_speed = func(tws, twa)

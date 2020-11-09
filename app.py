@@ -1,12 +1,14 @@
-import logging
 import io
 
-from logging import Formatter, FileHandler
-from flask import Flask, render_template, request, Response
+import logging
+
+from logging import FileHandler, Formatter
+
+from flask import Flask, Response, render_template, request
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
-from windrouter.map import create_map, add_barbs, add_route
+from windrouter.map import add_barbs, add_route, create_map
 
 # App Config.
 app = Flask(__name__)
@@ -26,8 +28,9 @@ def plot_png():
         lon1 = request.args['lon1']
         lat2 = request.args['lat2']
         lon2 = request.args['lon2']
-    except (KeyError) as e:
+    except (KeyError):
         lat1, lon1, lat2, lon2 = app.config['DEFAULT_MAP']
+        dpi = app.config['DPI']
         logging.log(logging.WARNING, 'using default coordinates')
 
     try:
@@ -35,12 +38,12 @@ def plot_png():
         lat2 = float(lat2)
         lon1 = float(lon1)
         lon2 = float(lon2)
-    except (ValueError) as e:
+    except (ValueError):
         logging.log(logging.ERROR, 'expecting real values')
 
     # generate map
-    fig = create_map(lat1, lon1, lat2, lon2)
-    filepath = 'data/2019122212/2019122212f000'
+    fig = create_map(lat1, lon1, lat2, lon2, dpi)
+    filepath = app.config['DEFAULT_GFS_FILE']
     fig = add_barbs(fig, filepath, lat1, lon1, lat2, lon2)
 
     # get route coordinates

@@ -16,4 +16,3 @@ dependencies:
   - pip:
     - geovectorslib==1.1
 prefix: /usr/local/Caskroom/miniconda/base/envs/windrouter
-

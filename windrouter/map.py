@@ -1,7 +1,9 @@
+import random
+
 import cartopy.crs as ccrs
 import cartopy.feature as cf
+
 from matplotlib.figure import Figure
-import random
 
 from .grib import grib_to_wind_vectors
 from .router import get_gcr
@@ -9,14 +11,14 @@ from .router import get_gcr
 # (lat1, lon1, lat2, lon2, n_points=10):
 
 
-def create_map(lat1, lon1, lat2, lon2, dpi=96):
+def create_map(lat1, lon1, lat2, lon2, dpi):
     """Return map figure."""
     fig = Figure(
-        figsize=(1200/dpi, 400/dpi),
+        figsize=(1200 / dpi, 400 / dpi),
         dpi=dpi)
     fig.set_constrained_layout_pads(
-        w_pad=4./dpi,
-        h_pad=4./dpi)
+        w_pad=4. / dpi,
+        h_pad=4. / dpi)
     ax = fig.add_subplot(111, projection=ccrs.PlateCarree())
     ax.set_extent([lon1, lon2, lat1, lat2], crs=ccrs.PlateCarree())
     ax.add_feature(cf.LAND)
@@ -49,9 +51,9 @@ def add_route(fig, lat1, lon1, lat2, lon2):
     return fig
 
 
-def create_figure(dpi=96):
+def create_figure(dpi):
     """Demo x-y plot for testing."""
-    fig = Figure(figsize=(800/dpi, 600/dpi), dpi=dpi)
+    fig = Figure(figsize=(800 / dpi, 600 / dpi), dpi=dpi)
     axis = fig.add_subplot(1, 1, 1)
     xs = range(100)
     ys = [random.randint(1, 50) for x in xs]

@@ -2,11 +2,9 @@
 
 Vectorized wind routing for sail boats using [geovectorslib](https://github.com/omdv/geovectors). **Work in Progress.**
 
-[![Unix Build Status](https://img.shields.io/travis/omdv/wind-router/master.svg?label=unix)](https://travis-ci.org/omdv/wind-router)
+![Build](https://github.com/omdv/wind-router/workflows/Build/badge.svg)
 [![Coverage Status](https://img.shields.io/coveralls/omdv/wind-router/master.svg)](https://coveralls.io/r/omdv/wind-router)
 [![Scrutinizer Code Quality](https://img.shields.io/scrutinizer/g/omdv/wind-router.svg)](https://scrutinizer-ci.com/g/omdv/wind-router/?branch=master)
-[![PyPI Version](https://img.shields.io/pypi/v/WindRouter.svg)](https://pypi.org/project/WindRouter)
-[![PyPI License](https://img.shields.io/pypi/l/WindRouter.svg)](https://pypi.org/project/WindRouter)
 
 ### Screenshots / Progress
 
@@ -23,3 +21,8 @@ Vectorized wind routing for sail boats using [geovectorslib](https://github.com/
 
 ## Usage
 `python app.py`
+
+## References
+- [Henry H.T. Chen's PhD Thesis](http://resolver.tudelft.nl/uuid:a6112879-4298-40a6-91c7-d9a431a674c7)
+- Modeling and Optimization Algorithms in Ship Weather Routing, DOI: 10.1016/j.enavi.2016.06.004
+- Optimal Ship Weather Routing Using Isochrone Method on the Basis of Weather Changes, DOI: 10.1061/40932(246)435 
