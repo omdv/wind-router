@@ -8,7 +8,9 @@ from flask import Flask, Response, render_template, request
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
+from windrouter.gfs import download_latest_gfs
 from windrouter.map import add_barbs, add_route, create_map
+
 
 # App Config.
 app = Flask(__name__)
@@ -21,8 +23,8 @@ def home():
     return render_template('pages/placeholder.home.html')
 
 
-@app.route('/map.png')
-def plot_png():
+@app.route('/map')
+def plot_map():
     try:
         lat1 = request.args['lat1']
         lon1 = request.args['lon1']
@@ -40,13 +42,23 @@ def plot_png():
         lon2 = float(lon2)
     except (ValueError):
         logging.log(logging.ERROR, 'expecting real values')
-
     # generate map
     fig = create_map(lat1, lon1, lat2, lon2, dpi)
-    filepath = app.config['DEFAULT_GFS_FILE']
-    fig = add_barbs(fig, filepath, lat1, lon1, lat2, lon2)
 
-    # get route coordinates
+    # plot weather
+    try:
+        latest = request.args['latest']
+    except KeyError:
+        latest = False
+
+    if latest:
+        weather_file = download_latest_gfs(0)
+    else:
+        weather_file = app.config['DEFAULT_GFS_FILE']
+
+    fig = add_barbs(fig, weather_file, lat1, lon1, lat2, lon2)
+
+    # plot route
     r_la1, r_lo1, r_la2, r_lo2 = app.config['DEFAULT_ROUTE']
     fig = add_route(fig, r_la1, r_lo1, r_la2, r_lo2)
 

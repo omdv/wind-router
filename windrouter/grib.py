@@ -1,38 +1,8 @@
-import os
-
 import numpy as np
 
 import pygrib as pg
 
-import requests
-
 from scipy.interpolate import RegularGridInterpolator
-
-
-def download_gfs_forecast(date, hour, fcst, resolution="1p00"):
-    """Download GFS grib files with forecast."""
-
-    filename = "gfs.t{}z.pgrb2.{}.f{}".format(hour, resolution, fcst)
-    folder = "{}{}".format(date, hour)
-    url = "https://www.ftp.ncep.noaa.gov/data/nccf/com/gfs/prod/gfs.{}/{}/".\
-        format(date, hour) + filename
-
-    # create folder
-    try:
-        os.mkdir(os.path.join("data", folder))
-    except:
-        pass
-
-    # download file
-    try:
-        r = requests.get(url)
-        path = os.path.join("data", folder, filename)
-
-        with open(path, 'wb') as f:
-            f.write(r.content)
-    except:
-        pass
-    return path
 
 
 def mps_to_knots(vals):

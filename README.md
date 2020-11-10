@@ -26,3 +26,4 @@ Vectorized wind routing for sail boats using [geovectorslib](https://github.com/
 - [Henry H.T. Chen's PhD Thesis](http://resolver.tudelft.nl/uuid:a6112879-4298-40a6-91c7-d9a431a674c7)
 - Modeling and Optimization Algorithms in Ship Weather Routing, DOI: 10.1016/j.enavi.2016.06.004
 - Optimal Ship Weather Routing Using Isochrone Method on the Basis of Weather Changes, DOI: 10.1061/40932(246)435 
+- [GFS grib2 filter](https://nomads.ncep.noaa.gov/)

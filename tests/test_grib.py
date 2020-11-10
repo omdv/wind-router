@@ -26,17 +26,6 @@ class TestGribMethods(unittest.TestCase):
                 outputs)
         )
 
-    def test_gfs_download(self):
-        date = "20201107"
-        hour = "06"
-        resolution = "1p00"
-        forecast = "003"
-
-        self.assertEqual(grib.download_gfs_forecast(
-            date, hour, forecast, resolution),
-            "https://www.ftp.ncep.noaa.gov/data/nccf/com/gfs/prod/" +
-            "gfs.20201105/06/gfs.t06z.pgrb2b.1p00.f003")
-
     # def test_grib_vectors(self):
     #     u, v, lats, lons = utils.grib_to_wind_vectors(
     #         'data/2019122212/2019122212f000',
