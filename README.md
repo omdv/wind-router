@@ -27,3 +27,5 @@ Vectorized wind routing for sail boats using [geovectorslib](https://github.com/
 - Modeling and Optimization Algorithms in Ship Weather Routing, DOI: 10.1016/j.enavi.2016.06.004
 - Optimal Ship Weather Routing Using Isochrone Method on the Basis of Weather Changes, DOI: 10.1061/40932(246)435 
 - [GFS grib2 filter](https://nomads.ncep.noaa.gov/)
+- [Boat polars - 1](https://jieter.github.io/orc-data/site/)
+- [Boat polars - 2](https://l-36.com/polar_polars.php)

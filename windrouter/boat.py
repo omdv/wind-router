@@ -3,30 +3,34 @@ import numpy as np
 
 from scipy.interpolate import interp2d
 
+from .utils import knots_to_mps
 
-def get_boat_data(boat_string):
-    """Load polar from file."""
-    polars = np.genfromtxt(
-        'data/polar-{:s}.csv'.format(boat_string),
-        delimiter=',')
+
+def get_boat_profile(filepath):
+    """Load polar from boat file."""
+    polars = np.genfromtxt(filepath, delimiter=';')
     polars = np.nan_to_num(polars)
 
     ws = polars[0, 1:]
     wa = polars[1:, 0]
     values = polars[1:, 1:]
 
+    # internally we use only meters per second
+    ws = knots_to_mps(ws)
+    values = knots_to_mps(values)
+
     f = interp2d(ws, wa, values, kind='linear')
     return {'func': f, 'polars': polars}
 
 
-def func_boat_speed(x, boat):
-    """Aux function for np.apply."""
-    tws = x[0]
-    twa = x[1]
-    twa = np.abs(twa)
-    if twa > 180:
-        twa = 360. - twa
-    return boat['func'](tws, twa)
+# def func_boat_speed(x, boat):
+#     """Aux function for np.apply."""
+#     tws = x[0]
+#     twa = x[1]
+#     twa = np.abs(twa)
+#     if twa > 180:
+#         twa = 360. - twa
+#     return boat['func'](tws, twa)
 
 
 def get_boat_speed(boat, tws, twa):
