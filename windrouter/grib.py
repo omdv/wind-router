@@ -28,7 +28,7 @@ def grib_to_wind_function(filepath):
         np.flip(np.hstack((tws, tws[:, 0].reshape(181, 1))), axis=0),
     )
 
-    return f_twa, f_tws
+    return {'twa': f_twa, 'tws': f_tws}
 
 
 def grib_to_wind_vectors(filepath, lat1, lat2, lon1, lon2):

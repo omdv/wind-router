@@ -1,14 +1,28 @@
-import random
-
 import cartopy.crs as ccrs
 import cartopy.feature as cf
+
+from geovectorslib import geod
 
 from matplotlib.figure import Figure
 
 from .grib import grib_to_wind_vectors
-from .router import get_gcr
 
-# (lat1, lon1, lat2, lon2, n_points=10):
+
+def get_gcr_points(lat1, lon1, lat2, lon2, n_points=10):
+    """Discretize gcr between two scalar coordinate points."""
+    points = [(lat1, lon1)]
+
+    inv = geod.inverse([lat1], [lon1], [lat2], [lon2])
+    dist = inv['s12'] / (n_points)
+
+    for i in range(n_points):
+        dir = geod.direct(lat1, lon1, inv['azi1'], dist)
+        points.append((dir['lat2'][0], dir['lon2'][0]))
+        lat1 = dir['lat2'][0]
+        lon1 = dir['lon2'][0]
+        inv = geod.inverse([lat1], [lon1], [lat2], [lon2])
+
+    return points
 
 
 def create_map(lat1, lon1, lat2, lon2, dpi):
@@ -28,7 +42,7 @@ def create_map(lat1, lon1, lat2, lon2, dpi):
     return fig
 
 
-def add_barbs(fig, filepath, lat1, lon1, lat2, lon2):
+def plot_barbs(fig, filepath, lat1, lon1, lat2, lon2):
     """Add barbs to the map figure."""
     u, v, lats, lons = grib_to_wind_vectors(filepath, lat1, lat2, lon1, lon2)
 
@@ -40,9 +54,9 @@ def add_barbs(fig, filepath, lat1, lon1, lat2, lon2):
     return fig
 
 
-def add_route(fig, lat1, lon1, lat2, lon2):
-    """Add router between two provided points."""
-    path = get_gcr(lat1, lon1, lat2, lon2, n_points=10)
+def plot_gcr(fig, lat1, lon1, lat2, lon2):
+    """Add gcrs between provided points to the map figure."""
+    path = get_gcr_points(lat1, lon1, lat2, lon2, n_points=10)
     lats = [x[0] for x in path]
     lons = [x[1] for x in path]
 
@@ -51,11 +65,12 @@ def add_route(fig, lat1, lon1, lat2, lon2):
     return fig
 
 
-def create_figure(dpi):
-    """Demo x-y plot for testing."""
-    fig = Figure(figsize=(800 / dpi, 600 / dpi), dpi=dpi)
-    axis = fig.add_subplot(1, 1, 1)
-    xs = range(100)
-    ys = [random.randint(1, 50) for x in xs]
-    axis.plot(xs, ys)
-    return fig
+def plot_isochrone(fig: dict, isochrone: dict) -> dict:
+    """
+    Add isochrone to the map figure.
+
+    Input: dictionary from move_boat_direct
+    """
+    ax = fig.get_axes()[0]
+    for p in isochrone['p2']:
+        ax.plot(p[0], p[1], 'r-', transform=ccrs.PlateCarree())

@@ -15,9 +15,13 @@ SECRET_KEY = 'my precious'
 
 # Default map coordinates - lat1, lon1, lat2, lon2
 DEFAULT_MAP = [30, 0, 45, 40]
+# DEFAULT_ROUTE = [43.70313, 7.26608, 33.888630, 35.495480]
 DEFAULT_ROUTE = [43.70313, 7.26608, 33.888630, 35.495480]
 
-# Default GFS file
+# Default boat polar file
+DEFAULT_BOAT = 'data/polar-ITA70.csv'
+
+# Default GFS props
 DEFAULT_GFS_DATE = '20201107'
 DEFAULT_GFS_HOUR = '06'
 DEFAULT_GFS_FCST = '000'

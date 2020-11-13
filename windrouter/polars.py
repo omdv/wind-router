@@ -1,9 +1,9 @@
-"""Boat vectors"""
+"""Boat polars."""
 import numpy as np
 
 from scipy.interpolate import interp2d
 
-from .utils import knots_to_mps
+from .utils import knots_to_mps, mps_to_knots
 
 
 def get_boat_profile(filepath):
@@ -23,18 +23,11 @@ def get_boat_profile(filepath):
     return {'func': f, 'polars': polars}
 
 
-# def func_boat_speed(x, boat):
-#     """Aux function for np.apply."""
-#     tws = x[0]
-#     twa = x[1]
-#     twa = np.abs(twa)
-#     if twa > 180:
-#         twa = 360. - twa
-#     return boat['func'](tws, twa)
+def get_boat_speed(boat, wind):
+    """Boat speed for given wind dict."""
+    twa = wind['twa']
+    tws = wind['tws']
 
-
-def get_boat_speed(boat, tws, twa):
-    """Boat speed for given TWS and TWA."""
     assert twa.shape == tws.shape, "Input shape mismatch"
     func = boat['func']
 

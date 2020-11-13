@@ -1,3 +1,4 @@
+"""Test GFS methods."""
 import unittest
 
 import numpy as np

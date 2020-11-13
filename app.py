@@ -8,8 +8,12 @@ from flask import Flask, Response, render_template, request
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
+from windrouter.boat import get_boat_profile
 from windrouter.gfs import download_latest_gfs
-from windrouter.map import add_barbs, add_route, create_map
+from windrouter.graphics import create_map, plot_barbs, plot_gcr
+# from windrouter.graphics import plot_isochrone
+from windrouter.grib import grib_to_wind_function
+from windrouter.router import calc_isochrone
 
 
 # App Config.
@@ -42,25 +46,23 @@ def plot_map():
         lon2 = float(lon2)
     except (ValueError):
         logging.log(logging.ERROR, 'expecting real values')
-    # generate map
+
     fig = create_map(lat1, lon1, lat2, lon2, dpi)
 
-    # plot weather
     try:
         latest = request.args['latest']
     except KeyError:
         latest = False
-
     if latest:
         weather_file = download_latest_gfs(0)
     else:
         weather_file = app.config['DEFAULT_GFS_FILE']
+    fig = plot_barbs(fig, weather_file, lat1, lon1, lat2, lon2)
 
-    fig = add_barbs(fig, weather_file, lat1, lon1, lat2, lon2)
-
-    # plot route
     r_la1, r_lo1, r_la2, r_lo2 = app.config['DEFAULT_ROUTE']
-    fig = add_route(fig, r_la1, r_lo1, r_la2, r_lo2)
+    fig = plot_gcr(fig, r_la1, r_lo1, r_la2, r_lo2)
+
+    fig = add_isochrones(fig)
 
     output = io.BytesIO()
     FigureCanvas(fig).print_png(output)
@@ -70,6 +72,16 @@ def plot_map():
         f.write(output.getbuffer())
 
     return Response(output.getvalue(), mimetype='image/png')
+
+
+def add_isochrones(fig):
+    b = get_boat_profile(app.config['DEFAULT_BOAT'])
+    f_twa, f_tws = grib_to_wind_function(app.config['DEFAULT_GFS_FILE'])
+    r_la1, r_lo1, r_la2, r_lo2 = app.config['DEFAULT_ROUTE']
+
+    iso = calc_isochrone([r_la1], [r_lo1], b, f_tws, f_twa)
+    print(iso)
+    return fig
 
 
 # Error handlers.
