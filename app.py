@@ -1,3 +1,4 @@
+"""Flask main."""
 import io
 
 import logging
@@ -8,7 +9,7 @@ from flask import Flask, Response, render_template, request
 
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
-from windrouter.boat import get_boat_profile
+from windrouter.polars import get_boat_profile
 from windrouter.gfs import download_latest_gfs
 from windrouter.graphics import create_map, plot_barbs, plot_gcr
 # from windrouter.graphics import plot_isochrone
@@ -24,11 +25,13 @@ app.config.from_object('config')
 # Controllers.
 @app.route('/')
 def home():
+    """Route handling."""
     return render_template('pages/placeholder.home.html')
 
 
 @app.route('/map')
 def plot_map():
+    """Route handling."""
     try:
         lat1 = request.args['lat1']
         lon1 = request.args['lon1']
@@ -75,11 +78,12 @@ def plot_map():
 
 
 def add_isochrones(fig):
-    b = get_boat_profile(app.config['DEFAULT_BOAT'])
-    f_twa, f_tws = grib_to_wind_function(app.config['DEFAULT_GFS_FILE'])
+    """Calculate isochrones."""
+    boat = get_boat_profile(app.config['DEFAULT_BOAT'])
+    wind = grib_to_wind_function(app.config['DEFAULT_GFS_FILE'])
     r_la1, r_lo1, r_la2, r_lo2 = app.config['DEFAULT_ROUTE']
 
-    iso = calc_isochrone([r_la1], [r_lo1], b, f_tws, f_twa)
+    iso = calc_isochrone((r_la1, r_lo1), boat, wind)
     print(iso)
     return fig
 
@@ -87,19 +91,20 @@ def add_isochrones(fig):
 # Error handlers.
 @app.errorhandler(500)
 def internal_error(error):
+    """Error handling."""
     return render_template('errors/500.html'), 500
 
 
 @app.errorhandler(404)
 def not_found_error(error):
+    """Error handling."""
     return render_template('errors/404.html'), 404
 
 
 if not app.debug:
     file_handler = FileHandler('error.log')
-    file_handler.setFormatter(
-        Formatter('%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]')
-    )
+    fmt = '%(asctime)s %(levelname)s: %(message)s [in %(pathname)s:%(lineno)d]'
+    file_handler.setFormatter(Formatter(fmt))
     app.logger.setLevel(logging.INFO)
     file_handler.setLevel(logging.INFO)
     app.logger.addHandler(file_handler)

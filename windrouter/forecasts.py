@@ -1,3 +1,4 @@
+"""Module to download GFS model grib2 files."""
 import os
 
 from lxml import etree
@@ -5,13 +6,8 @@ from lxml import etree
 import requests
 
 
-def get_latest_gfs_date_hour(model='1p00'):
-    """
-    Find the latest current gfs and forecasts
-    and download the file
-    """
-
-    # latest date
+def get_latest_gfs_timestamp(model='1p00'):
+    """Find the latest current gfs and forecasts and download the file."""
     url = 'https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_{}.pl'.format(model)
     html = etree.HTML(requests.get(url).content)
     dates = html.xpath('//tr//td/a/text()')
@@ -40,20 +36,20 @@ def get_latest_gfs_date_hour(model='1p00'):
     return latest_date, latest_hour
 
 
-def download_gfs_for_date_hour(date, hour, fcst, model='1p00'):
+def download_gfs_for_timestamp(date, hour, fcst, model='1p00'):
     """
     Download GFS grib files with forecast for specific date and hour.
+
+    Sources:
     https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25_1hr.pl?file=gfs.t18z.pgrb2.0p25.anl&lev_0.995_sigma_level=on&var_UGRD=on&var_VGRD=on&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fgfs.20201109%2F18
     https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_0p25_1hr.pl?file=gfs.t18z.pgrb2.0p25.f000&lev_0.995_sigma_level=on&var_UGRD=on&var_VGRD=on&leftlon=0&rightlon=360&toplat=90&bottomlat=-90&dir=%2Fgfs.20201109%2F18
     """
-
     url = 'https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_{}.pl'.format(model)
     fileurl = '?file=gfs.t{}z.pgrb2.{}.f{:03d}'.format(hour, model, fcst)
-    filter = '&lev_0.995_sigma_level=on&var_UGRD=on&var_VGRD=on&leftlon=0&' +\
+    filter = '&lev_10_m_above_ground=on&var_UGRD=on&var_VGRD=on&leftlon=0&' +\
              'rightlon=360&toplat=90&bottomlat=-90'
     dir = '&dir=%2Fgfs.{}%2F{}'.format(date, hour)
     url = url + fileurl + filter + dir
-    print(url)
 
     folder = '{}{}'.format(date, hour)
     filename = folder + 'f{:03d}'.format(fcst)
@@ -76,11 +72,15 @@ def download_gfs_for_date_hour(date, hour, fcst, model='1p00'):
     return path
 
 
-def download_latest_gfs(fcst):
-    date, hour = get_latest_gfs_date_hour()
-    path = download_gfs_for_date_hour(date, hour, fcst)
+def download_gfs_forecasts(date, hour, fcst_to_download):
+    """Donwload gfs with a given number of forecast files."""
+    for i in range(fcst_to_download):
+        fcst = i * 3
+        path = download_gfs_for_timestamp(date, hour, fcst)
     return path
 
-
 if __name__ == '__main__':
-    download_latest_gfs(3)
+    date = '20201116'
+    hour = '00'
+    fcst_to_download = 41
+    download_gfs_forecasts(date, hour, fcst_to_download)

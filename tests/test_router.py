@@ -3,7 +3,7 @@ import unittest
 
 import numpy as np
 
-from windrouter import polars, grib, router
+from windrouter import polars, weather, router
 
 
 class TestRouterMethods(unittest.TestCase):
@@ -14,8 +14,8 @@ class TestRouterMethods(unittest.TestCase):
         lats = [0, 0, -40, 0]
         lons = [0, 0, 0, 0]
         hdgs = [33, 123, 353, 0]
-        boat = polars.get_boat_profile('data/polar-ITA70.csv')
-        gfs = grib.grib_to_wind_function('data/2019122212/2019122212f000')
+        boat = polars.boat_properties('data/polar-ITA70.csv')
+        gfs = weather.grib_to_wind_function('data/2019122212/2019122212f000')
         hours = 1
         segments = 1
         result = router.move_boat_direct(
@@ -27,6 +27,3 @@ class TestRouterMethods(unittest.TestCase):
         self.assertTrue(np.allclose(
             result['s12'],
             [19444.93, 22.315, 30032.68, 17574.56]))
-
-if __name__ == '__main__':
-    unittest.main()

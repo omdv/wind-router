@@ -3,7 +3,7 @@ from geovectorslib import geod
 
 import numpy as np
 
-from .polars import get_boat_speed
+from .polars import boat_speed_function
 
 
 def move_boat_direct(lats, lons, hdgs,
@@ -27,7 +27,7 @@ def move_boat_direct(lats, lons, hdgs,
         tws = gfs['tws'](p2)
         wind = {'tws': tws, 'twa': twa - hdgs}
 
-        bs = get_boat_speed(boat, wind)
+        bs = boat_speed_function(boat, wind)
 
         if verbose:
             print('TWA: ', twa)
@@ -40,7 +40,7 @@ def move_boat_direct(lats, lons, hdgs,
         dist = (hours * 3600) * bs
 
         # move boat
-        g = geod.direct(*p2, hdgs, dist)
+        g = geod.direct(p2[0], p2[1], hdgs, dist)
 
         s12 += dist
         p2 = (g['lat2'], g['lon2'])
@@ -48,19 +48,21 @@ def move_boat_direct(lats, lons, hdgs,
     return {'azi1': hdgs, 's12': dist, 'p2': p2, 't12': hours * segments}
 
 
-def calc_isochrone(lats: float, lons: float, boat, gfs) -> dict:
+def calc_isochrone(start, boat, gfs):
     """
     Estimate isochrones given a variety of headings.
 
-    lats, lons - scalars of start point
+    start - scalar start point
     boat - boat profile
     gfs - interpolation functions for interpolated GFS
     """
     hdgs = [10 * i for i in range(36)]
     hours = 10
     segments = 1
+    lat = start[0]
+    lon = start[1]
     iso = move_boat_direct(
-        lats * np.ones(len(hdgs)),
-        lons * np.ones(len(hdgs)),
+        lat * np.ones(len(hdgs)),
+        lon * np.ones(len(hdgs)),
         hdgs, boat, gfs, hours, segments, True)
     return iso

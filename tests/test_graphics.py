@@ -23,6 +23,3 @@ class TestGraphicsMethods(unittest.TestCase):
             (36.00000000000163, 35.99999999999577)
         ]
         np.testing.assert_allclose(path, result)
-
-if __name__ == '__main__':
-    unittest.main()

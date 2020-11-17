@@ -3,11 +3,19 @@ import numpy as np
 
 from scipy.interpolate import interp2d
 
-from .utils import knots_to_mps, mps_to_knots
+from .utils import knots_to_mps
 
 
-def get_boat_profile(filepath):
-    """Load polar from boat file."""
+def boat_properties(filepath):
+    """
+    Load boat properties from boat file.
+
+            Parameters:
+                    filepath (string): Path to polars file
+
+            Returns:
+                    boat (dict): Dict with function and raw polars
+    """
     polars = np.genfromtxt(filepath, delimiter=';')
     polars = np.nan_to_num(polars)
 
@@ -23,8 +31,17 @@ def get_boat_profile(filepath):
     return {'func': f, 'polars': polars}
 
 
-def get_boat_speed(boat, wind):
-    """Boat speed for given wind dict."""
+def boat_speed_function(boat, wind):
+    """
+    Vectorized boat speed function.
+
+            Parameters:
+                    boat (dict): Boat dict with wind function
+                    wind (dict): Wind dict with TWA and TWS arrays
+
+            Returns:
+                    boat_speed (array): Array of boat speeds
+    """
     twa = wind['twa']
     tws = wind['tws']
 

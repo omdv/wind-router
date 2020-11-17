@@ -1,3 +1,4 @@
+"""Module to create map with route."""
 import cartopy.crs as ccrs
 import cartopy.feature as cf
 
@@ -5,7 +6,7 @@ from geovectorslib import geod
 
 from matplotlib.figure import Figure
 
-from .grib import grib_to_wind_vectors
+from .weather import grib_to_wind_vectors
 
 
 def get_gcr_points(lat1, lon1, lat2, lon2, n_points=10):
@@ -65,7 +66,7 @@ def plot_gcr(fig, lat1, lon1, lat2, lon2):
     return fig
 
 
-def plot_isochrone(fig: dict, isochrone: dict) -> dict:
+def plot_isochrone(fig, isochrone):
     """
     Add isochrone to the map figure.
 
