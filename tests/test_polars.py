@@ -27,9 +27,19 @@ class TestPolarMethods(unittest.TestCase):
         boat_file = 'data/polar-ITA70.csv'
         boat = boat_properties(boat_file)
 
-        tws = knots_to_mps(np.array([0, 6, 12, 9, 20, 16]))
-        twa = np.array([0, 52, 240, 110, 150, 180])
+        tws = knots_to_mps(np.array([0, 6, 12, 9, 20, 16, 7.9, 7.9]))
+        twa = np.array([0, 52, 240, 110, 150, 180, 181, 185])
         wind = {'tws': tws, 'twa': twa}
 
-        res = knots_to_mps(np.array([0, 8.65, 16.32, 13.45, 18.26, 14.3]))
-        self.assertTrue(np.allclose(boat_speed_function(boat, wind), res))
+        calculated = boat_speed_function(boat, wind)
+        print(calculated)
+        expected = np.array([
+            0,
+            4.44994444,
+            8.39573333,
+            6.91927778,
+            9.39375556,
+            6.37396667,
+            3.65040346,
+            3.72513509])
+        self.assertTrue(np.allclose(calculated, expected))

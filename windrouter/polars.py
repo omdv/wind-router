@@ -1,3 +1,4 @@
+#TODO: Introduce VMG and gybing
 """Boat polars."""
 import numpy as np
 
