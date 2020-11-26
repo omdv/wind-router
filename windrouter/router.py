@@ -2,6 +2,7 @@
 from geovectorslib import geod
 
 import numpy as np
+import datetime as dt
 
 from windrouter.isochrone import Isochrone
 from windrouter.polars import boat_speed_function
@@ -66,32 +67,45 @@ def prune_isochrone(iso: Isochrone, x, y, bins, trim=True):
                 pruned isochrone dictionary with max values in each bin
     """
     idxs = []
-    result = {}
+
+    arr_x = getattr(iso, x)
+    arr_y = getattr(iso, y)
 
     bin_stat, bin_edges, bin_number = binned_statistic(
-        iso[x], iso[y], statistic='max', bins=bins)
+        arr_x, arr_y, statistic=np.nanmax, bins=bins)
 
     if trim:
         for i in range(len(bin_edges)-1):
             try:
-                idxs.append(np.where(iso[y] == bin_stat[i])[0][0])
+                idxs.append(
+                    np.where(arr_y == bin_stat[i])[0][0])
             except IndexError:
                 pass
         idxs = list(set(idxs))
     else:
         for i in range(len(bin_edges)-1):
-            idxs.append(np.where(iso[y] == bin_stat[i])[0])
+            idxs.append(np.where(arr_y == bin_stat[i])[0])
         idxs = list(set([item for subl in idxs for item in subl]))
 
-    for k in iso.keys():
-        if isinstance(iso[k], (list, np.ndarray)):
-            result[k] = iso[k][idxs]
-        else:
-            result[k] = iso[k]
-    return result
+    # Return a trimmed isochrone
+    lats1 = iso.lats1[:, idxs]
+    lons1 = iso.lons1[:, idxs]
+    azi12 = iso.azi12[:, idxs]
+    s12 = iso.s12[:, idxs]
+    azi02 = iso.azi02[idxs]
+    s02 = iso.s02[idxs]
+
+    iso = iso._replace(lats1=lats1)
+    iso = iso._replace(lons1=lons1)
+    iso = iso._replace(azi12=azi12)
+    iso = iso._replace(s12=s12)
+    iso = iso._replace(azi02=azi02)
+    iso = iso._replace(s02=s02)
+
+    return iso
 
 
-def recursive_routing(iso,
+def recursive_routing(iso1,
                       boat,
                       winds,
                       delta_time,
@@ -101,7 +115,7 @@ def recursive_routing(iso,
     Progress one isochrone with pruning.
 
             Parameters:
-                iso (Isochrone) - starting isochrone
+                iso1 (Isochrone) - starting isochrone
                 start_point (tuple) - starting point of the route
                 end_point (tuple) - end point of the route
                 x1_coords (tuple) - tuple of arrays (lats, lons)
@@ -115,60 +129,76 @@ def recursive_routing(iso,
             Returns:
                 iso (Isochrone) - next isochrone
     """
-    # # determine headings towards end point
-    # gcrs = geod.inverse(x1_coords[0],
-    #                     x1_coords[1],
-    #                     x2_coords[0],
-    #                     x2_coords[1])
+    # branch out for multiple headings
+    lats = np.repeat(iso1.lats1, params['ROUTER_HDGS_SEGMENTS'] + 1, axis=1)
+    lons = np.repeat(iso1.lons1, params['ROUTER_HDGS_SEGMENTS'] + 1, axis=1)
+    azi12 = np.repeat(iso1.azi12, params['ROUTER_HDGS_SEGMENTS'] + 1, axis=1)
+    s12 = np.repeat(iso1.s12, params['ROUTER_HDGS_SEGMENTS'] + 1, axis=1)
+    start_lats = np.repeat(iso1.start[0], lats.shape[1])
+    start_lons = np.repeat(iso1.start[1], lons.shape[1])
 
-    # construct parameters for boat_direct call
-    lats = np.repeat(iso.lats1, params['ROUTER_HDGS_SEGMENTS'] + 1)
-    lons = np.repeat(iso.lons1, params['ROUTER_HDGS_SEGMENTS'] + 1)
-
-    # vector of GCR heading +/- increments
-    hdgs = np.repeat(iso.azi0, params['ROUTER_HDGS_SEGMENTS'] + 1)
+    # determine new headings - centered around prev step gcrs
+    hdgs = iso1.azi02[0, :]
     delta_hdgs = np.linspace(
         -params['ROUTER_HDGS_SEGMENTS'] * params['ROUTER_HDGS_INCREMENTS_DEG'],
         +params['ROUTER_HDGS_SEGMENTS'] * params['ROUTER_HDGS_INCREMENTS_DEG'],
         params['ROUTER_HDGS_SEGMENTS'] + 1)
-    delta_hdgs = np.tile(delta_hdgs, len(iso.lats1))
+    delta_hdgs = np.tile(delta_hdgs, iso1.lats1.shape[1])
     hdgs = hdgs - delta_hdgs
 
-    # call boat direct with N_coords x (ROUTER_HDGS_SEGMENTS+1) vector
-    move = move_boat_direct(lats, lons, hdgs,
+    # move boat with defined headings N_coords x (ROUTER_HDGS_SEGMENTS+1) times
+    move = move_boat_direct(lats[0, :], lons[0, :], hdgs[0],
                             boat, winds,
-                            iso.time1, delta_time,
-                            verbose=True)
+                            iso1.time1, delta_time,
+                            verbose=False)
 
-    print(move)
+    # create new isochrone before pruning
+    lats = np.vstack((move['lats2'], lats))
+    lons = np.vstack((move['lons2'], lons))
+    azi12 = np.vstack((move['azi1'], azi12))
+    s12 = np.vstack((move['s12'], s12))
 
-    # # pruning the new isochrone
-    # # determine gcrs from X0 to Xi
-    # start_lats = np.repeat(start_point[0], len(iso['lats2']))
-    # start_lons = np.repeat(start_point[1], len(iso['lons2']))
-    # gcrs = geod.inverse(start_lats, start_lons, iso['lats2'], iso['lons2'])
-    
-    # # determine bins - isochrone pruning segments
-    # c_coeff = np.pi / (60 * 180)
-    # gcr_x0 = geod.inverse(
-    #     start_point[0], start_point[1],
-    #     end_point[0], end_point[1])
-    
-    # iso['azi0'] = gcrs['azi1']
-    # iso['s0'] = gcrs['s12']
-    # bins = []
-    
-    # iso2 = prune_isochrone(iso, 'azi0', 's0',)
-    # print(iso2)
+    # determine gcrs from start to new isochrone
+    gcrs = geod.inverse(start_lats, start_lons, move['lats2'], move['lons2'])
+    azi02 = gcrs['azi1']
+    s02 = gcrs['s12']
 
-    # hdgs = [10 * i for i in range(36)]
-    # hours = 10
-    # segments = 1
-    # lat = start[0]
-    # lon = start[1]
-    # iso = move_boat_direct(
-    #     lat * np.ones(len(hdgs)),
-    #     lon * np.ones(len(hdgs)),
-    #     hdgs, boat, gfs, hours, segments, True)
-    # print(iso)
+    iso2 = Isochrone(
+        start=iso1.start,
+        finish=iso1.finish,
+        gcr_azi=iso1.gcr_azi,
+        count=iso1.count+1,
+        elapsed=iso1.elapsed+dt.timedelta(seconds=delta_time),
+        time1=iso1.time1+dt.timedelta(seconds=delta_time),
+        lats1=lats,
+        lons1=lons,
+        azi12=azi12,
+        s12=s12,
+        azi02=azi02,
+        s02=s02
+    )
+
+    # pruning isochrone - determine bins
+
+    # determine bins - isochrone pruning segments
+    # c = np.pi / (60 * 180)
+    # dist = (iso.elapsed.seconds / 3600 + 1) *\
+    #     params['ISOCHRONE_EXPECTED_SPEED_KTS']
+    # hdgs_segment = c * params['ISOCHRONE_RESOLUTION_RAD'] / np.sin(c * dist)
+    # hdgs_segment = hdgs_segment * 180 / np.pi
+
+    azi0s = np.repeat(
+        iso1.gcr_azi,
+        params['ISOCHRONE_PRUNE_SEGMENTS'] + 1)
+    delta_hdgs = np.linspace(
+        -params['ISOCHRONE_PRUNE_SECTOR_DEG'],
+        +params['ISOCHRONE_PRUNE_SECTOR_DEG'],
+        params['ISOCHRONE_PRUNE_SEGMENTS']+1)
+    bins = azi0s - delta_hdgs
+    bins = np.sort(bins)
+
+    iso2 = prune_isochrone(iso2, 'azi02', 's02', bins, True)
+    print(iso1)
+    print(iso2)
+
     return None

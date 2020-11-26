@@ -32,7 +32,6 @@ class TestPolarMethods(unittest.TestCase):
         wind = {'tws': tws, 'twa': twa}
 
         calculated = boat_speed_function(boat, wind)
-        print(calculated)
         expected = np.array([
             0,
             4.44994444,
