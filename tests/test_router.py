@@ -32,48 +32,6 @@ class TestRouterMethods(unittest.TestCase):
             result['s12'],
             [15731.34902478, 21790.40986404, 25748.94679565, 115.94699562]))
 
-    def test_routing(self):
-        """Test isochrone."""
-        start = (43.5, 7.2)
-        finish = (33.8, 35.5)
-        start_time = dt.datetime.strptime('2020111607', '%Y%m%d%H')
-
-        gcr = geod.inverse([start[0]], [start[1]], [finish[0]], [finish[1]])
-
-        iso = isochrone.Isochrone(
-            count=0,
-            start=start,
-            finish=finish,
-            gcr_azi=gcr['azi1'],
-            lats1=np.array([[start[0]]]),
-            lons1=np.array([[start[1]]]),
-            azi12=np.array([[None]]),
-            s12=np.array([[0]]),
-            azi02=np.array([[gcr['azi1']]]),
-            s02=np.array([]),
-            time1=start_time,
-            elapsed=dt.timedelta(seconds=0)
-        )
-
-        boat = polars.boat_properties('data/polar-ITA70.csv')
-        model = '2020111600'
-        winds = weather.read_wind_functions(model, 24)
-        params = {
-            'ROUTER_HDGS_SEGMENTS': 180,
-            'ROUTER_HDGS_INCREMENTS_DEG': 1,
-            'ROUTER_DELTA_TIME_HRS': 1,
-            'ISOCHRONE_EXPECTED_SPEED_KTS': 8,
-            'ISOCHRONE_RESOLUTION_RAD': 1,
-            'ISOCHRONE_PRUNE_SECTOR_DEG': 180,
-            'ISOCHRONE_PRUNE_SEGMENTS': 50}
-
-        delta_time_sec = 3600
-        router.recursive_routing(
-            iso, boat, winds,
-            delta_time_sec, params,
-            verbose=False)
-        return None
-
     def test_pruning(self):
         """Test isochrone."""
         azi02 = np.array([
@@ -140,7 +98,7 @@ class TestRouterMethods(unittest.TestCase):
 
         lats1_exp = np.array([39.92720749, 20.14341011, 29.903555, 20.139284])
         lats1_exp = np.array([lats1_exp, lats1_exp])
-        
+
         lons1_exp = np.array([40.13496081, 19.84634009, 30.091473, 19.879143])
         lons1_exp = np.array([lons1_exp, lons1_exp])
 
@@ -154,4 +112,112 @@ class TestRouterMethods(unittest.TestCase):
         self.assertTrue(np.allclose(calc.lons1, lons1_exp))
         self.assertTrue(np.allclose(calc.azi02, azi02_exp))
         self.assertTrue(np.allclose(calc.s02, s02_exp))
+        return None
+
+    def test_recursive_isochrone_method(self):
+        """Test isochrone."""
+        start = (43.5, 7.2)
+        finish = (33.8, 35.5)
+        start_time = dt.datetime.strptime('2020111607', '%Y%m%d%H')
+
+        gcr = geod.inverse([start[0]], [start[1]], [finish[0]], [finish[1]])
+
+        iso = isochrone.Isochrone(
+            count=0,
+            start=start,
+            finish=finish,
+            gcr_azi=gcr['azi1'],
+            lats1=np.array([[start[0]]]),
+            lons1=np.array([[start[1]]]),
+            azi12=np.array([[None]]),
+            s12=np.array([[0]]),
+            azi02=gcr['azi1'],
+            s02=np.array([0]),
+            time1=start_time,
+            elapsed=dt.timedelta(seconds=0)
+        )
+
+        boat = polars.boat_properties('data/polar-ITA70.csv')
+        model = '2020111600'
+        winds = weather.read_wind_functions(model, 24)
+        params = {
+            'ROUTER_HDGS_SEGMENTS': 30,
+            'ROUTER_HDGS_INCREMENTS_DEG': 1,
+            'ISOCHRONE_EXPECTED_SPEED_KTS': 8,
+            'ISOCHRONE_RESOLUTION_RAD': 1,
+            'ISOCHRONE_PRUNE_SECTOR_DEG_HALF': 15,
+            'ISOCHRONE_PRUNE_SEGMENTS': 5}
+
+        delta_time_sec = 3600
+        result = router.recursive_routing(
+            iso, boat, winds,
+            delta_time_sec, params,
+            verbose=False)
+        expected_s12 = np.array([
+            [13235.5216, 12843.9842, 13150.357, 13541.8945, 13933.4320],
+            [0., 0., 0., 0., 0.]])
+
+        self.assertTrue(np.allclose(result.s12, expected_s12))
+        self.assertTrue(
+            result.time1,
+            start_time+dt.timedelta(seconds=delta_time_sec))
+        return None
+
+    def test_recursive_routing(self):
+        """Unit test."""
+
+        start = (43.5, 7.2)
+        finish = (33.8, 35.5)
+        start_time = dt.datetime.strptime('2020111607', '%Y%m%d%H')
+
+        gcr = geod.inverse([start[0]], [start[1]], [finish[0]], [finish[1]])
+
+        iso = isochrone.Isochrone(
+            count=0,
+            start=start,
+            finish=finish,
+            gcr_azi=gcr['azi1'],
+            lats1=np.array([[start[0]]]),
+            lons1=np.array([[start[1]]]),
+            azi12=np.array([[None]]),
+            s12=np.array([[0]]),
+            azi02=gcr['azi1'],
+            s02=np.array([]),
+            time1=start_time,
+            elapsed=dt.timedelta(seconds=0)
+        )
+
+        boat = polars.boat_properties('data/polar-ITA70.csv')
+        model = '2020111600'
+        winds = weather.read_wind_functions(model, 24)
+        params = {
+            'ROUTER_HDGS_SEGMENTS': 30,
+            'ROUTER_HDGS_INCREMENTS_DEG': 1,
+            'ISOCHRONE_EXPECTED_SPEED_KTS': 8,
+            'ISOCHRONE_RESOLUTION_RAD': 1,
+            'ISOCHRONE_PRUNE_SECTOR_DEG_HALF': 15,
+            'ISOCHRONE_PRUNE_SEGMENTS': 5}
+
+        delta_time_sec = 3600
+
+        for i in range(2):
+            iso = router.recursive_routing(
+                iso, boat, winds,
+                delta_time_sec, params,
+                verbose=False)
+
+        expected_azi02 = np.array([
+            109.78670101,
+            100.45741406,
+            95.06500765,
+            117.72590944,
+            106.25658986])
+        expected_s02 = np.array([
+            42160.80855118,
+            39090.76869898,
+            36630.65067096,
+            43113.25351592,
+            41573.10032953])
+        self.assertTrue(np.allclose(iso.azi02, expected_azi02))
+        self.assertTrue(np.allclose(iso.s02, expected_s02))
         return None

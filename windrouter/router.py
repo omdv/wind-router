@@ -137,17 +137,18 @@ def recursive_routing(iso1,
     start_lats = np.repeat(iso1.start[0], lats.shape[1])
     start_lons = np.repeat(iso1.start[1], lons.shape[1])
 
-    # determine new headings - centered around prev step gcrs
-    hdgs = iso1.azi02[0, :]
+    # determine new headings - centered around gcrs X0 -> X_prev_step
+    hdgs = iso1.azi02
     delta_hdgs = np.linspace(
         -params['ROUTER_HDGS_SEGMENTS'] * params['ROUTER_HDGS_INCREMENTS_DEG'],
         +params['ROUTER_HDGS_SEGMENTS'] * params['ROUTER_HDGS_INCREMENTS_DEG'],
         params['ROUTER_HDGS_SEGMENTS'] + 1)
     delta_hdgs = np.tile(delta_hdgs, iso1.lats1.shape[1])
+    hdgs = np.repeat(hdgs, params['ROUTER_HDGS_SEGMENTS'] + 1)
     hdgs = hdgs - delta_hdgs
 
     # move boat with defined headings N_coords x (ROUTER_HDGS_SEGMENTS+1) times
-    move = move_boat_direct(lats[0, :], lons[0, :], hdgs[0],
+    move = move_boat_direct(lats[0, :], lons[0, :], hdgs,
                             boat, winds,
                             iso1.time1, delta_time,
                             verbose=False)
@@ -191,14 +192,13 @@ def recursive_routing(iso1,
         iso1.gcr_azi,
         params['ISOCHRONE_PRUNE_SEGMENTS'] + 1)
     delta_hdgs = np.linspace(
-        -params['ISOCHRONE_PRUNE_SECTOR_DEG'],
-        +params['ISOCHRONE_PRUNE_SECTOR_DEG'],
+        -params['ISOCHRONE_PRUNE_SECTOR_DEG_HALF'],
+        +params['ISOCHRONE_PRUNE_SECTOR_DEG_HALF'],
         params['ISOCHRONE_PRUNE_SEGMENTS']+1)
     bins = azi0s - delta_hdgs
     bins = np.sort(bins)
 
     iso2 = prune_isochrone(iso2, 'azi02', 's02', bins, True)
-    print(iso1)
-    print(iso2)
+    # print(iso2.azi02)
 
-    return None
+    return iso2

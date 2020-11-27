@@ -1,20 +1,19 @@
 """Flask main."""
 import io
-
 import logging
-
 from logging import FileHandler, Formatter
-
 from flask import Flask, Response, render_template, request
-
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
-from windrouter.polars import get_boat_profile
-from windrouter.gfs import download_latest_gfs
-from windrouter.graphics import create_map, plot_barbs, plot_gcr
+from windrouter import polars, isochrone, weather, graphics, router
+
+# from windrouter.isochrone import Isochrone
+# from windrouter.polars import boat_properties
+# from windrouter.weather import read_wind_functions
+# from windrouter.router import recursive_routing
+# from windrouter.graphics import create_map, plot_barbs, plot_gcr
 # from windrouter.graphics import plot_isochrone
-from windrouter.grib import grib_to_wind_function
-from windrouter.router import calc_isochrone
+# from windrouter.gfs import download_latest_gfs
 
 
 # App Config.
@@ -50,16 +49,20 @@ def plot_map():
     except (ValueError):
         logging.log(logging.ERROR, 'expecting real values')
 
-    fig = create_map(lat1, lon1, lat2, lon2, dpi)
+    # try:
+    #     latest = request.args['latest']
+    # except KeyError:
+    #     latest = False
+    # if latest:
+    #     weather_file = download_latest_gfs(0)
+    # else:
+    #     weather_file = app.config['DEFAULT_GFS_FILE']
 
-    try:
-        latest = request.args['latest']
-    except KeyError:
-        latest = False
-    if latest:
-        weather_file = download_latest_gfs(0)
-    else:
-        weather_file = app.config['DEFAULT_GFS_FILE']
+    boat = polars.boat_properties('data/polar-ITA70.csv')
+    model = '2020111600'
+    winds = weather.read_wind_functions(model, 24)
+
+    fig = create_map(lat1, lon1, lat2, lon2, dpi)
     fig = plot_barbs(fig, weather_file, lat1, lon1, lat2, lon2)
 
     r_la1, r_lo1, r_la2, r_lo2 = app.config['DEFAULT_ROUTE']
