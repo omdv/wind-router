@@ -1,31 +1,40 @@
 """Flask main."""
 import io
 import logging
+import datetime as dt
+import numpy as np
 from logging import FileHandler, Formatter
 from flask import Flask, Response, render_template, request
 from matplotlib.backends.backend_agg import FigureCanvasAgg as FigureCanvas
 
 from windrouter import polars, isochrone, weather, graphics, router
 
-# from windrouter.isochrone import Isochrone
-# from windrouter.polars import boat_properties
-# from windrouter.weather import read_wind_functions
-# from windrouter.router import recursive_routing
-# from windrouter.graphics import create_map, plot_barbs, plot_gcr
-# from windrouter.graphics import plot_isochrone
-# from windrouter.gfs import download_latest_gfs
-
 
 # App Config.
 app = Flask(__name__)
 app.config.from_object('config')
 
+state = {}
+state['hour'] = 0
+
 
 # Controllers.
-@app.route('/')
+@app.route('/', methods=["GET", "POST"])
 def home():
     """Route handling."""
-    return render_template('pages/placeholder.home.html')
+
+    if request.method == 'GET':
+        return render_template(
+            'pages/placeholder.home.html',
+            hour=state['hour'])
+    if request.method == 'POST':
+        if 'increment' in request.form:
+            state['hour'] = state['hour'] + 3
+        elif 'decrement' in request.form:
+            state['hour'] = state['hour'] - 3
+        return render_template(
+            'pages/placeholder.home.html',
+            hour=state['hour'])
 
 
 @app.route('/map')
@@ -49,6 +58,8 @@ def plot_map():
     except (ValueError):
         logging.log(logging.ERROR, 'expecting real values')
 
+    # fig = graphics.create_maps(lat1, lon1, lat2, lon2, dpi, 4)
+
     # try:
     #     latest = request.args['latest']
     # except KeyError:
@@ -58,17 +69,40 @@ def plot_map():
     # else:
     #     weather_file = app.config['DEFAULT_GFS_FILE']
 
-    boat = polars.boat_properties('data/polar-ITA70.csv')
-    model = '2020111600'
-    winds = weather.read_wind_functions(model, 24)
+    # try:
+    #     hour = request.args['hour']
+    # except (KeyError):
+    #     hour = 0
 
-    fig = create_map(lat1, lon1, lat2, lon2, dpi)
-    fig = plot_barbs(fig, weather_file, lat1, lon1, lat2, lon2)
+    model = app.config['DEFAULT_GFS_MODEL']
+    boatfile = app.config['DEFAULT_BOAT']
+    delta_time = 3600
+    hours = 120
+
+    vct_winds = weather.read_wind_vectors(model, hours, lat1, lon1, lat2, lon2)
+    fct_winds = weather.read_wind_functions(model, hours)
 
     r_la1, r_lo1, r_la2, r_lo2 = app.config['DEFAULT_ROUTE']
-    fig = plot_gcr(fig, r_la1, r_lo1, r_la2, r_lo2)
 
-    fig = add_isochrones(fig)
+    start = (r_la1, r_lo1)
+    finish = (r_la2, r_lo2)
+    start_time = dt.datetime.strptime('2020111607', '%Y%m%d%H')
+
+    boat = polars.boat_properties(boatfile)
+    params = app.config
+
+    iso = router.routing(
+        start, finish,
+        boat, fct_winds,
+        start_time,
+        delta_time, hours,
+        params
+    )
+
+    fig = graphics.create_map(lat1, lon1, lat2, lon2, dpi)
+    fig = graphics.plot_barbs(fig, vct_winds, 0)
+    fig = graphics.plot_gcr(fig, r_la1, r_lo1, r_la2, r_lo2)
+    fig = graphics.plot_isochrones(fig, iso)
 
     output = io.BytesIO()
     FigureCanvas(fig).print_png(output)
@@ -78,17 +112,6 @@ def plot_map():
         f.write(output.getbuffer())
 
     return Response(output.getvalue(), mimetype='image/png')
-
-
-def add_isochrones(fig):
-    """Calculate isochrones."""
-    boat = get_boat_profile(app.config['DEFAULT_BOAT'])
-    wind = grib_to_wind_function(app.config['DEFAULT_GFS_FILE'])
-    r_la1, r_lo1, r_la2, r_lo2 = app.config['DEFAULT_ROUTE']
-
-    iso = calc_isochrone((r_la1, r_lo1), boat, wind)
-    print(iso)
-    return fig
 
 
 # Error handlers.

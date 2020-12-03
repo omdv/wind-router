@@ -35,12 +35,37 @@ def grib_to_wind_function(filepath):
     return {'twa': f_twa, 'tws': f_tws}
 
 
-def grib_to_wind_vectors(filepath, lat1, lat2, lon1, lon2):
+def grib_to_wind_vectors(filepath, lat1, lon1, lat2, lon2):
     """Return u-v components for given rect for visualization."""
     grbs = pg.open(filepath)
     u, lats_u, lons_u = grbs[1].data(lat1, lat2, lon1, lon2)
     v, lats_v, lons_v = grbs[2].data(lat1, lat2, lon1, lon2)
     return u, v, lats_u, lons_u
+
+
+def read_wind_vectors(model, hours_ahead, lat1, lon1, lat2, lon2):
+    """Return wind vectors for given number of hours.
+
+            Parameters:
+                    model (dict): available forecast wind functions
+                    hours_ahead (int): number of hours looking ahead
+                    lats, lons: rectange defining forecast area
+
+            Returns:
+                    wind_vectors (dict):
+                        model: model timestamp
+                        hour: function for given forecast hour
+    """
+    wind_vectors = {}
+    wind_vectors['model'] = model
+
+    for i in range(hours_ahead + 1):
+        if (i % 3 == 0):
+            filename = 'data/{}/{}f{:03d}'.format(model, model, i)
+            wind_vectors[i] = grib_to_wind_vectors(
+                filename, lat1, lon1, lat2, lon2)
+
+    return wind_vectors
 
 
 def read_wind_functions(model, hours_ahead):
@@ -49,8 +74,6 @@ def read_wind_functions(model, hours_ahead):
 
             Parameters:
                     model (dict): available forecast wind functions
-                    coordinate (array): array of tuples (lats, lons)
-                    time (datetime): time to forecast
 
             Returns:
                     wind_functions (dict):

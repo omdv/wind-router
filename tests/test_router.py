@@ -207,17 +207,47 @@ class TestRouterMethods(unittest.TestCase):
                 verbose=False)
 
         expected_azi02 = np.array([
-            109.78670101,
             100.45741406,
+            113.20471345,
             95.06500765,
             117.72590944,
             106.25658986])
         expected_s02 = np.array([
-            42160.80855118,
             39090.76869898,
+            42504.71278082,
             36630.65067096,
             43113.25351592,
             41573.10032953])
         self.assertTrue(np.allclose(iso.azi02, expected_azi02))
         self.assertTrue(np.allclose(iso.s02, expected_s02))
+        return None
+
+    def test_complete_routing(self):
+        """Unit test."""
+
+        start = (43.5, 7.2)
+        finish = (33.8, 35.5)
+        start_time = dt.datetime.strptime('2020111607', '%Y%m%d%H')
+        delta_time = 3600
+        steps = 10
+
+        boat = polars.boat_properties('data/polar-ITA70.csv')
+        model = '2020111600'
+        winds = weather.read_wind_functions(model, 24)
+        params = {
+            'ROUTER_HDGS_SEGMENTS': 30,
+            'ROUTER_HDGS_INCREMENTS_DEG': 1,
+            'ISOCHRONE_EXPECTED_SPEED_KTS': 8,
+            'ISOCHRONE_RESOLUTION_RAD': 1,
+            'ISOCHRONE_PRUNE_SECTOR_DEG_HALF': 15,
+            'ISOCHRONE_PRUNE_SEGMENTS': 5}
+
+        iso = router.routing(
+            start, finish,
+            boat, winds,
+            start_time, delta_time, steps,
+            params
+        )
+        self.assertEqual(iso.s12.shape[0], 11)
+
         return None

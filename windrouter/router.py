@@ -179,18 +179,25 @@ def recursive_routing(iso1,
         s02=s02
     )
 
-    # pruning isochrone - determine bins
+    # pruning isochrone
 
-    # determine bins - isochrone pruning segments
-    # c = np.pi / (60 * 180)
-    # dist = (iso.elapsed.seconds / 3600 + 1) *\
-    #     params['ISOCHRONE_EXPECTED_SPEED_KTS']
-    # hdgs_segment = c * params['ISOCHRONE_RESOLUTION_RAD'] / np.sin(c * dist)
-    # hdgs_segment = hdgs_segment * 180 / np.pi
-
+    # new gcr azimuth to finish from the current isochrone
+    mean_dist = np.mean(iso2.s02)
+    gcr_point = geod.direct(
+        [iso1.start[0]],
+        [iso1.start[1]],
+        iso1.gcr_azi, mean_dist)
+    new_azi = geod.inverse(
+        gcr_point['lat2'],
+        gcr_point['lon2'],
+        [iso1.finish[0]],
+        [iso1.finish[1]]
+    )
     azi0s = np.repeat(
-        iso1.gcr_azi,
+        new_azi['azi1'],
         params['ISOCHRONE_PRUNE_SEGMENTS'] + 1)
+
+    # determine bins
     delta_hdgs = np.linspace(
         -params['ISOCHRONE_PRUNE_SECTOR_DEG_HALF'],
         +params['ISOCHRONE_PRUNE_SECTOR_DEG_HALF'],
@@ -199,6 +206,58 @@ def recursive_routing(iso1,
     bins = np.sort(bins)
 
     iso2 = prune_isochrone(iso2, 'azi02', 's02', bins, True)
-    # print(iso2.azi02)
 
     return iso2
+
+
+def routing(start,
+            finish,
+            boat,
+            winds,
+            start_time,
+            delta_time,
+            steps,
+            params,
+            verbose=False):
+    """
+    Do full isochrone routing.
+
+            Parameters:
+                iso1 (Isochrone) - starting isochrone
+                start_point (tuple) - starting point of the route
+                end_point (tuple) - end point of the route
+                x1_coords (tuple) - tuple of arrays (lats, lons)
+                x2_coords (tuple) - tuple of arrays (lats, lons)
+                boat (dict) - boat profile
+                winds (dict) - wind functions
+                start_time (datetime) - start time
+                delta_time (float) - time to move in seconds
+                params (dict) - isochrone calculation parameters
+
+            Returns:
+                iso (Isochrone) - next isochrone
+    """
+    gcr = geod.inverse([start[0]], [start[1]], [finish[0]], [finish[1]])
+
+    iso = Isochrone(
+        count=0,
+        start=start,
+        finish=finish,
+        gcr_azi=gcr['azi1'],
+        lats1=np.array([[start[0]]]),
+        lons1=np.array([[start[1]]]),
+        azi12=np.array([[None]]),
+        s12=np.array([[0]]),
+        azi02=gcr['azi1'],
+        s02=np.array([]),
+        time1=start_time,
+        elapsed=dt.timedelta(seconds=0)
+    )
+
+    for i in range(steps):
+        iso = recursive_routing(
+            iso, boat, winds,
+            delta_time, params,
+            verbose=False)
+
+    return iso

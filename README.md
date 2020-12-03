@@ -10,6 +10,7 @@ Vectorized wind routing for sail boats using [geovectorslib](https://github.com/
 
 - Visualization of barbs from grib files
 - Great circle route with geovectorslib
+- Vectorized isochrone method for high speed/resolution
 ![Pages](https://github.com/omdv/wind-router/blob/master/screenshots/map.png)
 
 
