@@ -20,11 +20,11 @@ if __name__ == "__main__":
 
     boat = polars.boat_properties(boatfile)
     params = {
-        'ROUTER_HDGS_SEGMENTS': 360,
-        'ROUTER_HDGS_INCREMENTS_DEG': 0.5,
+        'ROUTER_HDGS_SEGMENTS': 180,
+        'ROUTER_HDGS_INCREMENTS_DEG': 1,
         'ISOCHRONE_EXPECTED_SPEED_KTS': 8,
-        'ISOCHRONE_PRUNE_SECTOR_DEG_HALF': 360,
-        'ISOCHRONE_PRUNE_SEGMENTS': 0.5
+        'ISOCHRONE_PRUNE_SECTOR_DEG_HALF': 90,
+        'ISOCHRONE_PRUNE_SEGMENTS': 180
     }
 
     iso = router.routing(
@@ -34,10 +34,4 @@ if __name__ == "__main__":
         delta_time, hours,
         params
     )
-    print(iso)
-    print(time.time() - program_start)
-
-# 6.473351240158081s
-# 6.990983009338379s
-# 7.363748073577881s
-# 6.467334270477295s
+    print("Completed in {:4.4f} s".format(time.time() - program_start))
