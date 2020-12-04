@@ -1,5 +1,6 @@
 """Routing functions."""
 from geovectorslib import geod
+from global_land_mask import globe
 
 import numpy as np
 import datetime as dt
@@ -7,6 +8,7 @@ import datetime as dt
 from windrouter.isochrone import Isochrone
 from windrouter.polars import boat_speed_function
 from windrouter.weather import wind_function
+
 from scipy.stats import binned_statistic
 
 
@@ -161,6 +163,11 @@ def recursive_routing(iso1,
 
     # determine gcrs from start to new isochrone
     gcrs = geod.inverse(start_lats, start_lons, move['lats2'], move['lons2'])
+
+    # remove those which ended on land
+    is_on_land = globe.is_land(move['lats2'], move['lons2'])
+    gcrs['s12'][is_on_land] = 0
+
     azi02 = gcrs['azi1']
     s02 = gcrs['s12']
 
@@ -179,7 +186,7 @@ def recursive_routing(iso1,
         s02=s02
     )
 
-    # pruning isochrone
+    # ---- pruning isochrone ----
 
     # new gcr azimuth to finish from the current isochrone
     mean_dist = np.mean(iso2.s02)

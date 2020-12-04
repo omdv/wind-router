@@ -4,10 +4,7 @@ import cartopy.crs as ccrs
 import cartopy.feature as cf
 
 from geovectorslib import geod
-
 from matplotlib.figure import Figure
-
-# from .weather import grib_to_wind_vectors
 
 
 def get_gcr_points(lat1, lon1, lat2, lon2, n_points=10):

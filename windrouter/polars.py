@@ -1,8 +1,9 @@
-#TODO: Introduce VMG and gybing
-"""Boat polars."""
+"""
+Boat polars.
+TODO: Introduce gybbing and VMG
+"""
 import numpy as np
-
-from scipy.interpolate import interp2d
+from scipy.interpolate import RegularGridInterpolator
 
 from .utils import knots_to_mps
 
@@ -28,7 +29,11 @@ def boat_properties(filepath):
     ws = knots_to_mps(ws)
     values = knots_to_mps(values)
 
-    f = interp2d(ws, wa, values, kind='linear')
+    f = RegularGridInterpolator(
+        (ws, wa), values.T,
+        bounds_error=False,
+        fill_value=None
+    )
     return {'func': f, 'polars': polars}
 
 
@@ -54,9 +59,5 @@ def boat_speed_function(boat, wind):
     twa[twa > 180] = 360. - twa[twa > 180]
 
     # init boat speed vector
-    boat_speed = func(tws, twa)
-
-    # unsort the result
-    unsorted_idxs_tws = np.argsort(np.argsort(tws))
-    unsorted_idxs_twa = np.argsort(np.argsort(twa))
-    return boat_speed[unsorted_idxs_twa, unsorted_idxs_tws]
+    boat_speed = func((tws, twa))
+    return boat_speed
